@@ -2,10 +2,12 @@
 /**
  * Streamable HTTP entry (MCP 2026-07-28).
  * POST JSON-RPC to /mcp. Optional Authorization: Bearer overrides env token.
+ * Auto-starts the AdvisorPPC scheduler worker unless ADVISORPPC_SCHEDULER=0.
  */
 import { createServer as createHttpServer } from "node:http";
 import { createMcpHandler } from "@modelcontextprotocol/server";
 import { AdsClient, tokenFromEnv } from "./ads/client.js";
+import { ensureHttpWorker } from "./schedule/index.js";
 import { createServer } from "./server.js";
 
 const PORT = Number(process.env.PORT || 3333);
@@ -39,6 +41,8 @@ async function toWebRequest(req: import("node:http").IncomingMessage): Promise<R
 }
 
 async function main() {
+  const scheduler = ensureHttpWorker();
+
   const handler = createMcpHandler(
     (ctx) => {
       const token =
@@ -57,6 +61,21 @@ async function main() {
     if (path === "/health") {
       res.writeHead(200, { "content-type": "application/json" });
       res.end(JSON.stringify({ ok: true, service: "advisorppc-x-ads" }));
+      return;
+    }
+    if (path === "/scheduler") {
+      const st = scheduler.status();
+      res.writeHead(200, { "content-type": "application/json" });
+      res.end(
+        JSON.stringify({
+          ok: true,
+          running: st.running,
+          jobs_path: st.jobs_path,
+          settings: st.snapshot.settings,
+          agents: st.snapshot.agents,
+          jobs: st.snapshot.jobs.length,
+        }),
+      );
       return;
     }
     if (path !== PATH) {
@@ -88,6 +107,7 @@ async function main() {
 
   http.listen(PORT, HOST, () => {
     console.error(`advisorppc-x-ads MCP HTTP on http://${HOST}:${PORT}${PATH}`);
+    console.error(`scheduler ${scheduler.status().running ? "running" : "off"} store=${scheduler.store.path}`);
   });
 }
 

@@ -1,12 +1,14 @@
 ---
 name: x-ads-operator
-description: Use when auditing, reporting, creating, pausing, or deleting X Ads campaigns through AdvisorPPC tools. Contains playbooks reverse-engineered from Grok's X Ads connector.
-version: 0.2.0
+description: Use when auditing, reporting, creating, pausing, deleting, or scheduling X Ads campaigns through AdvisorPPC tools. Contains playbooks reverse-engineered from Grok's X Ads connector.
+version: 0.3.0
 ---
 
 # X Ads operator playbooks
 
 Hierarchy: **account → funding → campaign → ad group (line item) → ad (promoted tweet)**. Budget lives on the ad group. An ad serves only if campaign AND ad group are ACTIVE.
+
+X Ads API has **no native schedule**. Use AdvisorPPC `x_ads_scheduler_setup` + `x_ads_schedule_create`. Do not invent a go-live time outside the job store. Digests never auto-resume spend.
 
 ## Audit
 
@@ -33,6 +35,14 @@ Hierarchy: **account → funding → campaign → ad group (line item) → ad (p
 
 Custom cards: `x_ads_upload_media` (images or chunked video) → `x_ads_create_card` → `x_ads_create_tweet` (card_uri XOR media_keys) → `x_ads_create_ad`.
 
+## Schedule pause / resume (AdvisorPPC queue)
+
+1. `x_ads_scheduler_setup` once (starts worker; paste snippets for Claude/ChatGPT/Cursor/Grok). Pass `account_id` so digest agents know which account.
+2. Confirm entity + time with the user. Never invent ids.
+3. `x_ads_schedule_create` with `kind=once` (or `cron` like `0 9 * * 1-5`), `tool=x_ads_set_status`, `arguments: {account_id, entity, entity_id, status}`, `confirm=true`.
+4. Dayparting: two cron jobs — `ACTIVE` at open, `PAUSED` at close — still `confirm=true` after they named both.
+5. Optional digest webhook in `x_ads_scheduler_settings` so another model vendor can triage analytics without this server changing spend.
+
 ## Audiences, DNR, pixels
 
 - CRM list: `x_ads_create_audience` → `x_ads_audience_users` (raw emails hashed SHA-256 here) → `x_ads_add_targeting` with `CUSTOM_AUDIENCE`.
@@ -46,3 +56,4 @@ Custom cards: `x_ads_upload_media` (images or chunked video) → `x_ads_create_c
 - `entity_status=ACTIVE` requires `confirm_spend=true`.
 - Pause/resume/delete require `confirm=true` and a named entity.
 - Creative upload failure → STOP. Never substitute a still or a library leftover.
+- Never mix in `x_organic_*` from this server.

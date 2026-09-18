@@ -20,6 +20,8 @@ export function createServer(opts: CreateServerOptions = {}): McpServer {
         "Pause/resume/delete require confirm=true after the user named the exact entity.",
         "If a creative upload fails, STOP — never substitute a still or a library leftover.",
         "Audience and DNR identifiers are hashed SHA-256 in this server; do not log raw emails.",
+        "X Ads has no native schedule. Use x_ads_scheduler_setup then x_ads_schedule_create for AdvisorPPC's own queue. HTTP auto-starts the worker; stdio needs npm run worker or ADVISORPPC_SCHEDULER=1.",
+        "Digest agents (analytics_digest, paused_audit) never auto-resume spend.",
       ].join(" "),
     },
   );

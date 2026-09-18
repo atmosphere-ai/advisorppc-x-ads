@@ -1,7 +1,7 @@
 {
   "name": "@advisorppc/x-ads",
-  "version": "0.2.0",
-  "description": "AdvisorPPC X Ads MCP connector — policy-safe X/Twitter Ads tools on MCP 2026-07-28 + MCP Apps.",
+  "version": "0.3.0",
+  "description": "AdvisorPPC X Ads MCP connector — policy-safe X/Twitter Ads tools on MCP 2026-07-28 + MCP Apps, with a self-starting scheduler module.",
   "type": "module",
   "license": "MIT",
   "author": {
@@ -19,15 +19,18 @@
     "x-ads",
     "twitter-ads",
     "ppc",
+    "scheduler",
     "advisorppc"
   ],
   "bin": {
-    "advisorppc-x-ads": "./dist/index.js"
+    "advisorppc-x-ads": "./dist/index.js",
+    "advisorppc-x-ads-worker": "./dist/worker.js"
   },
   "main": "./dist/index.js",
   "exports": {
     ".": "./dist/index.js",
-    "./server": "./dist/server.js"
+    "./server": "./dist/server.js",
+    "./schedule": "./dist/schedule/index.js"
   },
   "files": [
     "dist",
@@ -43,8 +46,10 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
     "start:http": "node dist/http.js",
+    "worker": "node dist/worker.js",
     "dev": "tsx src/index.ts",
     "dev:http": "tsx src/http.ts",
+    "dev:worker": "tsx src/worker.ts",
     "test": "tsx --test tests/*.test.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },

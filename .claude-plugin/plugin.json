@@ -1,7 +1,7 @@
 {
   "name": "advisorppc-x-ads",
-  "version": "0.2.0",
-  "description": "Work on real X (Twitter) Ads accounts from Claude Code: list campaigns, pull 7-day analytics, create paused campaigns and image ads, with spend guards.",
+  "version": "0.3.0",
+  "description": "Work on real X (Twitter) Ads accounts from Claude Code: list campaigns, pull 7-day analytics, create paused campaigns and image ads, schedule pause/resume via AdvisorPPC's own queue, with spend guards.",
   "author": {
     "name": "Advisor Media",
     "url": "https://advisorppc.com"
@@ -13,6 +13,7 @@
     "ppc",
     "mcp",
     "mcp-apps",
+    "scheduler",
     "advertising"
   ]
 }

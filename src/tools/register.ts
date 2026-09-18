@@ -11,6 +11,7 @@ import {
 import { registerAudienceTools } from "./audiences.js";
 import { accountId, dropEmpty, text, UI_META } from "./common.js";
 import { registerPixelTools } from "./pixels.js";
+import { registerScheduleTools, SCHEDULE_TOOL_COUNT } from "./schedule.js";
 
 type ClientFactory = () => AdsClient;
 
@@ -18,6 +19,7 @@ export function registerTools(server: McpServer, getClient: ClientFactory): void
   const ads = () => getClient();
   registerAudienceTools(server, getClient);
   registerPixelTools(server, getClient);
+  registerScheduleTools(server);
 
   server.registerTool(
     "x_ads_list_accounts",
@@ -928,4 +930,4 @@ export function registerTools(server: McpServer, getClient: ClientFactory): void
   );
 }
 
-export const TOOL_COUNT = 43;
+export const TOOL_COUNT = 43 + SCHEDULE_TOOL_COUNT;

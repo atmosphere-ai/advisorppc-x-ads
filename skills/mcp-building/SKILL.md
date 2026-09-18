@@ -1,12 +1,12 @@
 ---
 name: mcp-building
 description: Use when building or extending this MCP server, choosing SDK v1 vs v2, Streamable HTTP vs stdio, or adding tools the Grok X Ads connector does not expose.
-version: 0.1.0
+version: 0.3.0
 ---
 
 # Building on MCP v2 (2026-07-28)
 
-This repo uses **SDK v2** (`@modelcontextprotocol/server`), not the v1 monolith `@modelcontextprotocol/sdk`.
+This repo uses **SDK v2** (`@modelcontextprotocol/server`), not the v1 monolith `@modelcontextprotocol/sdk`. Same layout as `advisorppc-x-organic`.
 
 ## Why v2
 
@@ -23,9 +23,11 @@ This repo uses **SDK v2** (`@modelcontextprotocol/server`), not the v1 monolith 
 - `src/tools/register.ts` — Grok-shaped tools + `x_ads_create_video_ad`
 - `src/tools/audiences.ts` — custom audiences, estimate, DNR
 - `src/tools/pixels.ts` — web event tags (X Pixel)
+- `src/tools/schedule.ts` — scheduler / agents
+- `src/schedule/` — portable job store + worker (export `@advisorppc/x-ads/schedule`)
 - `src/ads/media.ts` — simple image + v2 chunked video
 - `src/apps/` — MCP Apps `ui://` resource + tool `_meta.ui.resourceUri`
-- `src/index.ts` stdio · `src/http.ts` Streamable HTTP
+- `src/index.ts` stdio · `src/http.ts` Streamable HTTP (auto-starts worker) · `src/worker.ts` standalone
 
 ## Adding a tool
 
@@ -42,3 +44,5 @@ This repo uses **SDK v2** (`@modelcontextprotocol/server`), not the v1 monolith 
 - Proxy blindly to `https://ads-api.x.com/mcp` and drop the safety layer.
 - Depend on v1 `HTTP+SSE` (`/sse` + `/messages`).
 - Register tools on a shared `McpServer` outside the HTTP factory.
+- Claim X has a native schedule. Use the AdvisorPPC queue module.
+- Auto-resume spend from digest agents.

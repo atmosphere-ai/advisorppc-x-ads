@@ -44,3 +44,7 @@ export function refuseInventedBudget(budget: unknown, field: string): void {
 
 export const CREATIVE_SUBSTITUTION_BAN =
   "If the intended creative failed to upload or process, STOP. Do not promote a still, a source image, or a pre-existing library asset.";
+
+export const NO_SCHEDULE =
+  "X Ads API has no native schedule. Use AdvisorPPC x_ads_schedule_* tools — never invent a go-live time outside the job store. Digests never auto-resume spend.";
+

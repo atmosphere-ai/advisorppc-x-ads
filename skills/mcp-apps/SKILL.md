@@ -10,7 +10,7 @@ MCP Apps (SEP-1865, stable **2026-01-26**, ext-apps 2.x wire-compatible with 1.x
 
 ## Pattern in this repo
 
-1. Resource `ui://advisorppc/x-ads/dashboard` with MIME `text/html;profile=mcp-app`.
+1. Resources `ui://advisorppc/x-ads/dashboard` and `ui://advisorppc/x-ads/scheduler` with MIME `text/html;profile=mcp-app`.
 2. Hosts that understand `_meta.ui.resourceUri` preload the HTML.
 3. Tool JSON (`structuredContent`) is the fallback — **always** return text+structured so Claude/Grok/Cursor without Apps still work.
 

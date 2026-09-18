@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.0 — 2026-09-18
+
+- Built-in AdvisorPPC scheduler module (`@advisorppc/x-ads/schedule`)
+- HTTP auto-starts the worker; `npm run worker` for stdio / backend
+- Tools: `x_ads_scheduler_setup` / `_status` / `_settings`, `x_ads_schedule_list` / `_create` / `_cancel`, `x_ads_agents_list` / `_agent_set`
+- Agents: publish_queue, analytics_digest, paused_audit, health (digests never auto-resume spend)
+- Vendor self-setup snippets for Claude, ChatGPT, Cursor, Grok, AdvisorPPC backend
+- MCP Apps scheduler view `ui://advisorppc/x-ads/scheduler`
+- 51 tools total
+
 ## 0.2.0 — 2026-09-18
 
 - Chunked video upload (Ads API v2 INIT/APPEND/FINALIZE + STATUS poll, `amplify_video`)
