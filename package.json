@@ -1,6 +1,6 @@
 {
   "name": "@advisorppc/x-ads",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "AdvisorPPC X Ads MCP connector — policy-safe X/Twitter Ads tools on MCP 2026-07-28 + MCP Apps.",
   "type": "module",
   "license": "MIT",

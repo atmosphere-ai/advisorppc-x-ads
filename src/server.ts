@@ -19,6 +19,7 @@ export function createServer(opts: CreateServerOptions = {}): McpServer {
         "Creates are PAUSED. Pass confirm_spend=true only after the user explicitly asked to start spending.",
         "Pause/resume/delete require confirm=true after the user named the exact entity.",
         "If a creative upload fails, STOP — never substitute a still or a library leftover.",
+        "Audience and DNR identifiers are hashed SHA-256 in this server; do not log raw emails.",
       ].join(" "),
     },
   );

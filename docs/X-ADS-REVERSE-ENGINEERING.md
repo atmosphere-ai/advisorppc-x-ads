@@ -25,7 +25,7 @@ See README tool list. Notable composites:
 - `x_ads_create_image_ad` = media upload + POST cards + POST tweet + POST promoted_tweets
 - `x_ads_get_analytics` = GET `/12/stats/accounts/:id` with `placement=ALL_ON_TWITTER`, ≤7 days, ≤20 ids
 
-Official MCP extras we **do not** wrap in 0.1.0: pixels, DNR lists, audience CRUD, tweet previews, `estimate_audience`, dedicated `remove_targeting` (use `replace=true` on add).
+Official MCP extras wrapped in **0.2.0**: pixels (`web_event_tags`), DNR lists, audience CRUD + hashed users, `estimate_audience`, chunked video. Still not wrapped: app lists, tweet previews, app event tags, tracking-partner impression tags.
 
 ## Agent playbooks
 

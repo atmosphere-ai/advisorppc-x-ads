@@ -13,8 +13,12 @@ Do **not** call this ready for users until every box in **Ready for users** is c
 
 - [x] Ads API v12 client (Bearer, form + JSON, pagination, errors)
 - [x] Safety policy (paused-by-default, confirm_spend, no creative substitution, no invented budgets)
-- [x] Register all 27 operator tools
-- [x] Composite `x_ads_create_image_ad` pipeline
+- [x] Register operator tools (43 in 0.2.0)
+- [x] Composite `x_ads_create_image_ad` / `x_ads_create_video_ad` pipelines
+- [x] Chunked video upload (v2 INIT/APPEND/FINALIZE + STATUS)
+- [x] Custom audience CRUD + hashed users
+- [x] Do Not Reach lists + hashed emails
+- [x] X Pixel / web event tag CRUD
 - [x] stdio transport (Claude Code / Cursor / Grok Build)
 - [x] Streamable HTTP transport (`POST /mcp`)
 - [x] MCP App dashboard (`ui://advisorppc/x-ads/dashboard`)
@@ -32,10 +36,10 @@ Do **not** call this ready for users until every box in **Ready for users** is c
 
 ## 4. Quality
 
-- [x] Unit tests for client, money, safety, schema
-- [x] `npm test` passes (9/9)
+- [x] Unit tests for client, money, safety, hash, media, schema
+- [x] `npm test` passes
 - [x] `npm run typecheck` passes
-- [x] Smoke: `tools/list` returns 27 tools over stdio
+- [x] Smoke: `tools/list` returns 43 tools
 - [x] Pushed to GitHub `main`
 
 ## Ready for users
@@ -43,11 +47,11 @@ Do **not** call this ready for users until every box in **Ready for users** is c
 - [x] Install docs work for Claude Code, Cursor, Grok, and raw HTTP
 - [x] Read tools are wired to Ads API v12 (live ads account required; empty token is a ConfigError)
 - [x] Writes cannot spend unless the user explicitly confirmed (`confirm_spend` / `confirm`)
+- [x] Audience/DNR identifiers are SHA-256 hashed in-process; raw PII is not logged
 - [x] No secrets in the repo
-- [x] Version `0.1.0` tagged in CHANGELOG as the first user-facing release
+- [x] Version `0.2.0` tagged in CHANGELOG
 
-### Known 0.1.0 limits
+### Known 0.2.0 limits
 
-- Video/chunked media upload is not implemented (images via `media_url` or base64).
-- Not a proxy of the official 74-tool Ads MCP (no pixels / DNR / audience CRUD).
+- App event tags, tracking-partner tags, app lists, tweet previews still not wrapped.
 - Org `advisorppc-org` could not host this repo (no create-repo permission); lives under `atmosphere-ai` until transferred.

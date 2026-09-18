@@ -2,43 +2,22 @@ import type { McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 import type { AdsClient } from "../ads/client.js";
 import { PolicyError } from "../ads/errors.js";
-import { DASHBOARD_URI } from "../apps/register.js";
+import { isVideoMime, uploadMedia } from "../ads/media.js";
 import {
   CREATIVE_SUBSTITUTION_BAN,
   assertNamedMutation,
   normalizeCreateStatus,
 } from "../policy/safety.js";
+import { registerAudienceTools } from "./audiences.js";
+import { accountId, dropEmpty, text, UI_META } from "./common.js";
+import { registerPixelTools } from "./pixels.js";
 
 type ClientFactory = () => AdsClient;
 
-/** MCP Apps linkage (SEP-1865). Hosts that ignore Apps still get JSON. */
-const UI_META = { ui: { resourceUri: DASHBOARD_URI } } as const;
-
-function text(data: unknown) {
-  const payload = data ?? null;
-  return {
-    content: [{ type: "text" as const, text: JSON.stringify(payload, null, 2) }],
-    structuredContent: (typeof payload === "object" && payload !== null ? payload : { result: payload }) as Record<
-      string,
-      unknown
-    >,
-    _meta: UI_META,
-  };
-}
-
-function dropEmpty(obj: Record<string, unknown>): Record<string, unknown> {
-  const out: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(obj)) {
-    if (v === undefined || v === null || v === "") continue;
-    out[k] = v;
-  }
-  return out;
-}
-
-const accountId = z.string().describe("Ads API account id from x_ads_list_accounts, e.g. 18ce55v2od2");
-
 export function registerTools(server: McpServer, getClient: ClientFactory): void {
   const ads = () => getClient();
+  registerAudienceTools(server, getClient);
+  registerPixelTools(server, getClient);
 
   server.registerTool(
     "x_ads_list_accounts",
@@ -648,7 +627,7 @@ export function registerTools(server: McpServer, getClient: ClientFactory): void
     {
       title: "Upload media",
       description:
-        "Upload an image via media_url or inline base64 (media.data). Returns media_key for x_ads_create_card or x_ads_create_tweet. Provide exactly one source. Video/chunked upload is not in 0.1.0 — use a still or pre-uploaded media_key. " +
+        "Upload an image or video via media_url or inline base64 (media.data). Images use simple upload; video and files >5MB use v2 chunked INIT/APPEND/FINALIZE and poll until processed. Ads videos use media_category amplify_video. Returns media_key for cards/tweets. Provide exactly one source. " +
         CREATIVE_SUBSTITUTION_BAN,
       inputSchema: z.object({
         account_id: accountId,
@@ -662,29 +641,37 @@ export function registerTools(server: McpServer, getClient: ClientFactory): void
           })
           .optional(),
         name: z.string().optional(),
+        for_ads: z.boolean().optional(),
       }),
       annotations: { readOnlyHint: false, openWorldHint: true },
     },
-    async ({ account_id, media_url, media, name }) => {
+    async ({ account_id, media_url, media, name, for_ads }) => {
       if (!!media_url === !!media) {
         throw new PolicyError("Provide exactly one of media_url or media.");
       }
       const client = ads();
-      let mediaKey: string;
+      let buf: Buffer;
+      let mime = media?.mime_type;
       if (media_url) {
         const bin = await fetch(media_url);
-        if (!bin.ok) throw new PolicyError(`Failed to fetch media_url: ${bin.status}`);
-        const buf = Buffer.from(await bin.arrayBuffer());
-        mediaKey = await uploadSimpleMedia(client.accessToken, buf, media?.mime_type);
+        if (!bin.ok) throw new PolicyError(`Failed to fetch media_url: ${bin.status}. ${CREATIVE_SUBSTITUTION_BAN}`);
+        buf = Buffer.from(await bin.arrayBuffer());
+        mime = mime || bin.headers.get("content-type") || undefined;
       } else {
-        const buf = Buffer.from(media!.data, "base64");
-        mediaKey = await uploadSimpleMedia(client.accessToken, buf, media!.mime_type);
+        buf = Buffer.from(media!.data, "base64");
       }
+      const uploaded = await uploadMedia({
+        accessToken: client.accessToken,
+        body: buf,
+        mimeType: mime,
+        forAds: for_ads !== false,
+        fetchImpl: client.fetchImpl,
+      });
       const library = await client.postForm(`/12/accounts/${account_id}/media_library`, {
-        media_key: mediaKey,
+        media_key: uploaded.media_key,
         name,
       });
-      return text({ media_key: mediaKey, media_library: library });
+      return text({ ...uploaded, media_library: library });
     },
   );
 
@@ -795,14 +782,26 @@ export function registerTools(server: McpServer, getClient: ClientFactory): void
       }
       const client = ads();
       let buf: Buffer;
+      let mime = args.image?.mime_type;
       if (args.media_url) {
         const bin = await fetch(args.media_url);
         if (!bin.ok) throw new PolicyError(`Creative fetch failed: ${bin.status}. ${CREATIVE_SUBSTITUTION_BAN}`);
         buf = Buffer.from(await bin.arrayBuffer());
+        mime = mime || bin.headers.get("content-type") || undefined;
       } else {
         buf = Buffer.from(args.image!.data, "base64");
       }
-      const media_key = await uploadSimpleMedia(client.accessToken, buf, args.image?.mime_type);
+      if (isVideoMime(mime ?? "")) {
+        throw new PolicyError("This tool is for stills. Use x_ads_create_video_ad for video.");
+      }
+      const uploaded = await uploadMedia({
+        accessToken: client.accessToken,
+        body: buf,
+        mimeType: mime,
+        forAds: true,
+        fetchImpl: client.fetchImpl,
+      });
+      const media_key = uploaded.media_key;
       await client.postForm(`/12/accounts/${args.account_id}/media_library`, {
         media_key,
         name: args.name,
@@ -834,28 +833,99 @@ export function registerTools(server: McpServer, getClient: ClientFactory): void
       return text({ media_key, card_uri, tweet_id, ad });
     },
   );
+
+  server.registerTool(
+    "x_ads_create_video_ad",
+    {
+      title: "Create video ad (pipeline)",
+      description:
+        "Composite: chunked video upload (amplify_video) → website card (or media_keys if no destination_url) → nullcast post → promote onto an EXISTING ad group. Provide media_url or inline video (base64). Requires text. " +
+        CREATIVE_SUBSTITUTION_BAN,
+      inputSchema: z.object({
+        account_id: accountId,
+        line_item_id: z.string(),
+        text: z.string(),
+        destination_url: z.string().url().optional(),
+        name: z.string().optional(),
+        media_url: z.string().url().optional(),
+        video: z
+          .object({
+            data: z.string(),
+            encoding: z.enum(["base64"]).default("base64"),
+            mime_type: z.string().optional(),
+            file_name: z.string().optional(),
+          })
+          .optional(),
+      }),
+      annotations: { readOnlyHint: false, openWorldHint: true },
+    },
+    async (args) => {
+      if (!!args.media_url === !!args.video) {
+        throw new PolicyError("Provide exactly one of media_url or video.");
+      }
+      const client = ads();
+      let buf: Buffer;
+      let mime = args.video?.mime_type ?? "video/mp4";
+      if (args.media_url) {
+        const bin = await fetch(args.media_url);
+        if (!bin.ok) throw new PolicyError(`Creative fetch failed: ${bin.status}. ${CREATIVE_SUBSTITUTION_BAN}`);
+        buf = Buffer.from(await bin.arrayBuffer());
+        mime = bin.headers.get("content-type") || mime;
+      } else {
+        buf = Buffer.from(args.video!.data, "base64");
+      }
+      if (!isVideoMime(mime)) {
+        throw new PolicyError("This tool is for video. Use x_ads_create_image_ad for stills.");
+      }
+      const uploaded = await uploadMedia({
+        accessToken: client.accessToken,
+        body: buf,
+        mimeType: mime,
+        forAds: true,
+        fetchImpl: client.fetchImpl,
+      });
+      const media_key = uploaded.media_key;
+      await client.postForm(`/12/accounts/${args.account_id}/media_library`, {
+        media_key,
+        name: args.name,
+      });
+      let card_uri: string | undefined;
+      let tweet: { data?: { id_str?: string; id?: string } };
+      if (args.destination_url) {
+        const card = (await client.postJson(`/12/accounts/${args.account_id}/cards`, {
+          name: args.name,
+          components: [
+            { type: "MEDIA", media_key },
+            {
+              type: "DETAILS",
+              title: args.name ?? args.text.slice(0, 70),
+              destination: { type: "WEBSITE", url: args.destination_url },
+            },
+          ],
+        })) as { data?: { card_uri?: string; uri?: string } };
+        card_uri = card.data?.card_uri || card.data?.uri;
+        if (!card_uri) throw new PolicyError(`Card create did not return card_uri. ${CREATIVE_SUBSTITUTION_BAN}`);
+        tweet = (await client.postForm(`/12/accounts/${args.account_id}/tweet`, {
+          text: args.text,
+          card_uri,
+          nullcast: true,
+        })) as { data?: { id_str?: string; id?: string } };
+      } else {
+        tweet = (await client.postForm(`/12/accounts/${args.account_id}/tweet`, {
+          text: args.text,
+          media_keys: media_key,
+          nullcast: true,
+        })) as { data?: { id_str?: string; id?: string } };
+      }
+      const tweet_id = String(tweet.data?.id_str ?? tweet.data?.id ?? "");
+      if (!tweet_id) throw new PolicyError(`Post create failed. ${CREATIVE_SUBSTITUTION_BAN}`);
+      const ad = await client.postForm(`/12/accounts/${args.account_id}/promoted_tweets`, {
+        line_item_id: args.line_item_id,
+        tweet_ids: tweet_id,
+      });
+      return text({ media_key, card_uri, tweet_id, ad, category: uploaded.category });
+    },
+  );
 }
 
-async function uploadSimpleMedia(accessToken: string, buf: Buffer, mime?: string): Promise<string> {
-  const form = new FormData();
-  const type = mime ?? "image/png";
-  const blob = new Blob([new Uint8Array(buf)], { type });
-  form.append("media", blob, type.includes("gif") ? "upload.gif" : type.includes("jpeg") ? "upload.jpg" : "upload.png");
-  form.append("media_category", "tweet_image");
-  const res = await fetch("https://upload.twitter.com/1.1/media/upload.json", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${accessToken}` },
-    body: form,
-  });
-  const json = (await res.json()) as { media_id_string?: string; media_key?: string; errors?: unknown };
-  if (!res.ok) {
-    throw new PolicyError(
-      `Media upload failed (${res.status}): ${JSON.stringify(json.errors ?? json)}. ${CREATIVE_SUBSTITUTION_BAN}`,
-    );
-  }
-  const key = json.media_key || (json.media_id_string ? `3_${json.media_id_string}` : "");
-  if (!key) throw new PolicyError(`Media upload returned no media_key. ${CREATIVE_SUBSTITUTION_BAN}`);
-  return key;
-}
-
-export const TOOL_COUNT = 27;
+export const TOOL_COUNT = 43;

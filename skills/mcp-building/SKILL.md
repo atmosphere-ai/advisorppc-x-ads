@@ -20,7 +20,10 @@ This repo uses **SDK v2** (`@modelcontextprotocol/server`), not the v1 monolith 
 
 - `src/ads/client.ts` — Ads API v12 (Bearer, form + JSON, pagination)
 - `src/policy/safety.ts` — paused-by-default / confirm flags
-- `src/tools/register.ts` — 27 Grok-shaped tools
+- `src/tools/register.ts` — Grok-shaped tools + `x_ads_create_video_ad`
+- `src/tools/audiences.ts` — custom audiences, estimate, DNR
+- `src/tools/pixels.ts` — web event tags (X Pixel)
+- `src/ads/media.ts` — simple image + v2 chunked video
 - `src/apps/` — MCP Apps `ui://` resource + tool `_meta.ui.resourceUri`
 - `src/index.ts` stdio · `src/http.ts` Streamable HTTP
 

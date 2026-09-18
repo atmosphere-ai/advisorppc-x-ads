@@ -2,7 +2,7 @@
 
 **Policy-safe X (Twitter) Ads for MCP clients** — Claude Code, Cursor, Grok, VS Code, or any Streamable HTTP host.
 
-This is the operator connector reverse-engineered from Grok’s first-party **X Ads** tools (27 curated tools) and mapped onto **Ads API v12**. It is **not** a raw dump of X’s 74-tool Ads MCP. Writes default to **PAUSED**. Spend, pause, and delete require an explicit confirm flag after a named user ask.
+This is the operator connector reverse-engineered from Grok’s first-party **X Ads** tools (27 curated tools) and mapped onto **Ads API v12**, plus audience/pixel/DNR and chunked video that Grok’s 27 omit. Writes default to **PAUSED**. Spend, pause, and delete require an explicit confirm flag after a named user ask.
 
 [Website](https://advisorppc.com) · [Tasks](TASKS.md) · [Reverse-engineering](docs/X-ADS-REVERSE-ENGINEERING.md) · [MCP v2 notes](docs/MCP-V2.md)
 
@@ -16,13 +16,17 @@ This is the operator connector reverse-engineered from Grok’s first-party **X 
 | API | `https://ads-api.x.com/12` with OAuth2 Bearer (`ads.read` / `ads.write`) |
 | Safety | Paused-by-default, `confirm_spend` / `confirm`, no creative substitution, budget on the **ad group** |
 
-## Tools (27)
+## Tools (43)
 
-**Read:** `x_ads_list_accounts` · `x_ads_list_funding` · `x_ads_list_campaigns` · `x_ads_list_line_items` · `x_ads_list_ads` · `x_ads_list_targeting` · `x_ads_list_audiences` · `x_ads_list_creatives` · `x_ads_get_tweets` · `x_ads_get_cards` · `x_ads_get_media` · `x_ads_search_targeting` · `x_ads_active_entities` · `x_ads_get_analytics` · `x_ads_reach`
+**Read:** `x_ads_list_accounts` · `x_ads_list_funding` · `x_ads_list_campaigns` · `x_ads_list_line_items` · `x_ads_list_ads` · `x_ads_list_targeting` · `x_ads_list_audiences` · `x_ads_audience_targeted` · `x_ads_list_dnr` · `x_ads_list_pixels` · `x_ads_get_pixel` · `x_ads_list_creatives` · `x_ads_get_tweets` · `x_ads_get_cards` · `x_ads_get_media` · `x_ads_search_targeting` · `x_ads_estimate_audience` · `x_ads_active_entities` · `x_ads_get_analytics` · `x_ads_reach`
 
 **Write structure:** `x_ads_create_campaign` · `x_ads_create_ad_group` · `x_ads_update_campaign` · `x_ads_update_ad_group` · `x_ads_set_status` · `x_ads_add_targeting` · `x_ads_delete`
 
-**Write creative:** `x_ads_upload_media` · `x_ads_create_card` · `x_ads_create_tweet` · `x_ads_create_ad` · `x_ads_create_image_ad` (upload → website card → nullcast post → promote)
+**Audiences & DNR:** `x_ads_create_audience` · `x_ads_update_audience` · `x_ads_delete_audience` · `x_ads_audience_users` · `x_ads_create_dnr` · `x_ads_delete_dnr` · `x_ads_dnr_users`
+
+**Pixels (web event tags):** `x_ads_create_pixel` · `x_ads_update_pixel` · `x_ads_delete_pixel`
+
+**Write creative:** `x_ads_upload_media` (images + chunked video) · `x_ads_create_card` · `x_ads_create_tweet` · `x_ads_create_ad` · `x_ads_create_image_ad` · `x_ads_create_video_ad`
 
 ## Install
 
@@ -112,7 +116,7 @@ npm run dev:http
 
 ## What this is not
 
-- Not X’s official 74-tool MCP at `https://ads-api.x.com/mcp` (pixels, DNR lists, audience CRUD, tweet previews live there).
+- Not a 1:1 clone of X’s official 74-tool MCP at `https://ads-api.x.com/mcp` (app lists, tweet previews, app event tags, and tracking-partner tags still live there).
 - Not a Google Ads connector — that is [`advisorppc-org/advisorppc-plugin`](https://github.com/advisorppc-org/advisorppc-plugin) → `https://mcp.advisorppc.com/claude`.
 
 ## License

@@ -1,6 +1,6 @@
 {
   "name": "advisorppc-x-ads",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Work on real X (Twitter) Ads accounts from Claude Code: list campaigns, pull 7-day analytics, create paused campaigns and image ads, with spend guards.",
   "author": {
     "name": "Advisor Media",

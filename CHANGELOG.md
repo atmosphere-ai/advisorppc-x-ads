@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.0 — 2026-09-18
+
+- Chunked video upload (Ads API v2 INIT/APPEND/FINALIZE + STATUS poll, `amplify_video`)
+- Composite `x_ads_create_video_ad`
+- Custom audience CRUD + hashed user load (`x_ads_audience_users`)
+- Audience size estimate
+- Do Not Reach list CRUD + hashed email load
+- X Pixel / web event tag CRUD (`x_ads_list_pixels` …)
+- 43 tools total
+
 ## 0.1.0 — 2026-09-18
 
 First user-facing release.

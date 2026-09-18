@@ -1,7 +1,7 @@
 ---
 name: x-ads-operator
 description: Use when auditing, reporting, creating, pausing, or deleting X Ads campaigns through AdvisorPPC tools. Contains playbooks reverse-engineered from Grok's X Ads connector.
-version: 0.1.0
+version: 0.2.0
 ---
 
 # X Ads operator playbooks
@@ -28,10 +28,17 @@ Hierarchy: **account → funding → campaign → ad group (line item) → ad (p
 1. funding → `x_ads_create_campaign` (no budget, PAUSED)
 2. `x_ads_create_ad_group` with daily/total micros + objective
 3. `x_ads_search_targeting` / `x_ads_list_audiences` → `x_ads_add_targeting`
-4. `x_ads_create_image_ad` (existing `line_item_id`, `text`, `destination_url`, `media_url` or inline image)
+4. `x_ads_create_image_ad` or `x_ads_create_video_ad` (existing `line_item_id`, `text`, optional `destination_url`, media_url or inline)
 5. `x_ads_set_status` ACTIVE only with `confirm=true` after an explicit go-live ask
 
-Custom cards: `x_ads_upload_media` → `x_ads_create_card` → `x_ads_create_tweet` (card_uri XOR media_keys) → `x_ads_create_ad`.
+Custom cards: `x_ads_upload_media` (images or chunked video) → `x_ads_create_card` → `x_ads_create_tweet` (card_uri XOR media_keys) → `x_ads_create_ad`.
+
+## Audiences, DNR, pixels
+
+- CRM list: `x_ads_create_audience` → `x_ads_audience_users` (raw emails hashed SHA-256 here) → `x_ads_add_targeting` with `CUSTOM_AUDIENCE`.
+- Estimate before spend: `x_ads_estimate_audience`.
+- Suppression: one DNR list per account (`x_ads_create_dnr` → `x_ads_dnr_users`). Emails only.
+- X Pixel: `x_ads_list_pixels` / `x_ads_create_pixel`. `website_tag_id` is the embed/Conversion API id. Delete requires `confirm`.
 
 ## Hard rules
 

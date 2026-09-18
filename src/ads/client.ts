@@ -40,7 +40,7 @@ function formBody(fields: Record<string, unknown>): string {
 export class AdsClient {
   readonly accessToken: string;
   readonly baseUrl: string;
-  private readonly fetchImpl: typeof fetch;
+  readonly fetchImpl: typeof fetch;
 
   constructor(opts: AdsClientOptions) {
     if (!opts.accessToken) {
