@@ -1,0 +1,14 @@
+{
+  "name": "advisorppc",
+  "owner": {
+    "name": "Advisor Media",
+    "url": "https://advisorppc.com"
+  },
+  "plugins": [
+    {
+      "name": "advisorppc-x-ads",
+      "source": "./",
+      "description": "X Ads MCP connector with paused-by-default writes and MCP Apps dashboard."
+    }
+  ]
+}

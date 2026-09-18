@@ -1,0 +1,7 @@
+{
+  "advisorppc-x-ads": {
+    "type": "stdio",
+    "command": "node",
+    "args": ["dist/index.js"]
+  }
+}
